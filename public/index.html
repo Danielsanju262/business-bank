@@ -557,10 +557,25 @@
       <div class="game-id-section">
         <div class="game-id-label">GAME ID</div>
         <div class="game-id-value" id="displayGameId">XXXXX</div>
-        <button class="btn btn-primary" id="btnShareLink" style="margin-top: 12px; padding: 10px 16px; font-size: 14px;"
-          onclick="copyGameLinkToClipboard(myGameId)">
-          📋 Copy Invite Link
-        </button>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: center;">
+          <button class="btn btn-primary" id="btnShareLink"
+            style="padding: 10px 16px; font-size: 14px; margin: 0; flex: 1;"
+            onclick="copyGameLinkToClipboard(myGameId)">
+            📋 Copy Link
+          </button>
+          <button class="btn btn-outline" id="btnShowQR"
+            style="padding: 10px 16px; font-size: 14px; margin: 0; flex: 1;" onclick="toggleQRCode()">
+            📱 QR Code
+          </button>
+        </div>
+
+        <div id="qrCodeContainer" class="hidden"
+          style="margin-top: 12px; padding: 16px; background: white; border-radius: 12px; display: flex; flex-direction: column; align-items: center;">
+          <div id="qrCode"></div>
+          <p style="margin-top: 8px; font-size: 12px; color: #64748b;">Scan to join the game</p>
+        </div>
+
         <div id="shareUrlPreview" style="margin-top: 8px; font-size: 11px; color: #64748b; word-break: break-all;">
         </div>
       </div>
@@ -1093,6 +1108,8 @@
     </div>
   </div>
 
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io(window.location.origin);
@@ -1201,6 +1218,58 @@
         `;
       document.body.appendChild(feedback);
       setTimeout(() => feedback.remove(), 2000);
+    }
+
+    // --- QR CODE FUNCTIONS ---
+    let qrCodeInstance = null;
+    let qrCodeGenerated = false;
+
+    function generateQRCode(gameId) {
+      const qrContainer = document.getElementById('qrCode');
+      const gameLink = getShareableGameLink(gameId);
+
+      // Clear previous QR code if exists
+      qrContainer.innerHTML = '';
+
+      // Generate new QR code
+      if (typeof QRCode !== 'undefined') {
+        qrCodeInstance = new QRCode(qrContainer, {
+          text: gameLink,
+          width: 180,
+          height: 180,
+          colorDark: "#1e293b",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        qrCodeGenerated = true;
+      } else {
+        console.error("QR Code library not loaded");
+        qrContainer.textContent = "Error: QR Library not loaded";
+      }
+    }
+
+    function toggleQRCode() {
+      const container = document.getElementById('qrCodeContainer');
+      const btn = document.getElementById('btnShowQR');
+
+      if (container.classList.contains('hidden')) {
+        // Show QR code
+        container.classList.remove('hidden');
+        btn.textContent = '✕ Hide QR';
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-danger');
+
+        // Generate QR code if not already generated
+        if (!qrCodeGenerated && myGameId) {
+          generateQRCode(myGameId);
+        }
+      } else {
+        // Hide QR code
+        container.classList.add('hidden');
+        btn.textContent = '📱 QR Code';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-outline');
+      }
     }
 
     // Check URL for game ID on page load
@@ -1547,6 +1616,17 @@
 
       // Update the browser URL to include the game ID for sharing
       updateUrlWithGameId(myGameId);
+
+      // Reset QR code state for new game
+      qrCodeGenerated = false;
+      const qrCodeContainer = document.getElementById('qrCodeContainer');
+      if (qrCodeContainer) qrCodeContainer.classList.add('hidden');
+      const btnShowQR = document.getElementById('btnShowQR');
+      if (btnShowQR) {
+        btnShowQR.textContent = '📱 QR Code';
+        btnShowQR.classList.remove('btn-danger');
+        btnShowQR.classList.add('btn-outline');
+      }
 
       // **FIX: Update balance immediately for non-host players**
       if (!isHost && data.balance !== undefined) {
