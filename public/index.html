@@ -11,8 +11,23 @@
       --bg: #f8fafc;
       --surface: #ffffff;
       --text: #1e293b;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --input-bg: #ffffff;
       --danger: #ef4444;
       --success: #22c55e;
+      --shadow: rgb(0 0 0 / 0.1);
+    }
+
+    [data-theme='dark'] {
+      --primary: #60a5fa;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+      --input-bg: #0f172a;
+      --shadow: rgb(0 0 0 / 0.5);
     }
 
     * {
@@ -90,11 +105,12 @@
     select {
       width: 100%;
       padding: 14px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--border);
       border-radius: 12px;
       margin-bottom: 12px;
       font-size: 16px;
-      background: white;
+      background: var(--input-bg);
+      color: var(--text);
     }
 
     /* Screens */
@@ -126,7 +142,7 @@
       background: var(--surface);
       padding: 16px;
       border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 4px 6px -1px var(--shadow);
       margin-bottom: 12px;
     }
 
@@ -160,7 +176,7 @@
 
     .game-id-label {
       font-size: 12px;
-      color: #64748b;
+      color: var(--text-secondary);
       font-weight: 600;
     }
 
@@ -178,7 +194,7 @@
       margin-bottom: 8px;
       font-size: 14px;
       text-transform: uppercase;
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     .players-list-wrapper {
@@ -187,9 +203,9 @@
       max-height: 40vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      background: white;
+      background: var(--surface);
       border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border);
       margin-bottom: 12px;
     }
 
@@ -201,7 +217,7 @@
 
     #playerList li {
       padding: 12px 16px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -328,11 +344,11 @@
 
     /* Game History List */
     .game-history-item {
-      background: white;
+      background: var(--surface);
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 12px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -358,7 +374,7 @@
 
     .game-history-name {
       font-size: 14px;
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     .delete-game-btn {
@@ -409,17 +425,17 @@
     .log-container {
       flex-grow: 1;
       overflow-y: auto;
-      background: white;
+      background: var(--surface);
       border-radius: 12px;
       padding: 12px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border);
       font-size: 14px;
       min-height: 200px;
     }
 
     .log-item {
       padding: 4px 0;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border);
     }
 
     .log-item.new {
@@ -429,10 +445,10 @@
     }
 
     .log-history {
-      color: #64748b;
+      color: var(--text-secondary);
       font-size: 12px;
       margin-top: 10px;
-      border-top: 2px dashed #cbd5e1;
+      border-top: 2px dashed var(--border);
       padding-top: 5px;
     }
 
@@ -452,7 +468,7 @@
     }
 
     .modal-content {
-      background: white;
+      background: var(--surface);
       padding: 24px;
       border-radius: 16px;
       width: 100%;
@@ -497,6 +513,11 @@
 </head>
 
 <body>
+  <button id="themeToggle" class="btn-outline"
+    style="position: fixed; top: 16px; right: 16px; width: 40px; height: 40px; padding: 0; border-radius: 50%; z-index: 1000; display: flex; align-items: center; justify-content: center; background: var(--surface); box-shadow: 0 2px 4px var(--shadow); border: 1px solid var(--border);">
+    🌙
+  </button>
+
   <div id="modal" class="hidden">
     <div class="modal-content">
       <h3 id="modalTitle">Request</h3>
@@ -1112,6 +1133,26 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // --- THEME TOGGLE ---
+    const toggleBtn = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    // Check saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      html.setAttribute('data-theme', savedTheme);
+      toggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    }
+
+    toggleBtn.onclick = () => {
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      toggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    };
+
     const socket = io(window.location.origin);
 
     let reconnectAttempts = 0;
