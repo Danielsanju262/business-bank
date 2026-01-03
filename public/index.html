@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Bank Game</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --text: #1e293b;
+        --danger: #ef4444;
+        --success: #22c55e;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        height: 100%;
+        overflow: hidden;
+      }
+
+      /* Utility */
+      .hidden {
+        display: none !important;
+      }
+      .btn {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 18px;
+        cursor: pointer;
+        margin-bottom: 10px;
+        transition: transform 0.1s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: white;
+      }
+      .btn-success {
+        background: var(--success);
+        color: white;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+      }
+      .btn-small {
+        padding: 8px 12px;
+        font-size: 12px;
+        width: auto;
+        margin: 0;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        background: white;
+      }
+
+      /* Screens */
+      .screen {
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px;
+      }
+
+      .screen-inner {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      /* Headers & Layouts */
+      h1,
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      h3 {
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+      .card {
+        background: var(--surface);
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        margin-bottom: 12px;
+      }
+
+      /* LOBBY LAYOUT */
+      #lobbyScreen {
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .lobby-container {
+        height: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      .game-id-section {
+        flex-shrink: 0;
+        background: var(--surface);
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .game-id-label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+      }
+
+      .game-id-value {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: 3px;
+        color: var(--primary);
+        margin-top: 4px;
+      }
+
+      .players-title {
+        flex-shrink: 0;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 14px;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+
+      .players-list-wrapper {
+        flex: 1;
+        min-height: 120px;
+        max-height: 40vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 12px;
+      }
+
+      #playerList {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      #playerList li {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #playerList li:last-child {
+        border-bottom: none;
+      }
+
+      .player-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .player-name {
+        font-weight: 600;
+        font-size: 16px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .player-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .status-badge {
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .not-ready {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .kick-btn {
+        background: var(--danger);
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .ready-section {
+        flex-shrink: 0;
+        padding-top: 8px;
+      }
+
+      #lobbyMsg {
+        text-align: center;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: var(--danger);
+        min-height: 24px;
+        font-size: 14px;
+      }
+
+      .countdown-timer {
+        font-size: 48px;
+        font-weight: 800;
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 10px;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      #btnReady {
+        margin-bottom: 0 !important;
+      }
+
+      /* Bank View for Host */
+      .bank-header {
+        background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      }
+
+      .bank-title {
+        font-size: 24px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+
+      .bank-subtitle {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      /* Game History List */
+      .game-history-item {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .game-history-info {
+        flex: 1;
+        cursor: pointer;
+      }
+
+      .game-history-info:active {
+        opacity: 0.7;
+      }
+
+      .game-history-id {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary);
+        letter-spacing: 2px;
+        margin-bottom: 4px;
+      }
+
+      .game-history-name {
+        font-size: 14px;
+        color: #64748b;
+      }
+
+      .delete-game-btn {
+        background: var(--danger);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* Game UI */
+      .balance-card {
+        text-align: center;
+        background: var(--text);
+        color: white;
+        padding: 24px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        position: relative;
+      }
+      .balance-amount {
+        font-size: 36px;
+        font-weight: 800;
+        margin-top: 8px;
+      }
+      .eye-icon {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        cursor: pointer;
+        opacity: 0.7;
+        font-size: 24px;
+      }
+
+      .actions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      /* Logs */
+      .log-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        background: white;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        font-size: 14px;
+        min-height: 200px;
+      }
+      .log-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .log-item.new {
+        animation: flash 1s;
+        font-weight: bold;
+        color: var(--primary);
+      }
+      .log-history {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 10px;
+        border-top: 2px dashed #cbd5e1;
+        padding-top: 5px;
+      }
+
+      /* Modal */
+      #modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      @keyframes flash {
+        0% {
+          background: #bfdbfe;
+        }
+        100% {
+          background: transparent;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="modal" class="hidden">
+      <div class="modal-content">
+        <h3 id="modalTitle">Request</h3>
+        <p id="modalText" style="margin: 10px 0">Player requests money</p>
+        <div id="modalActions"></div>
+      </div>
+    </div>
+
+    <div id="menuScreen" class="screen">
+      <div class="screen-inner">
+        <h1>🏦 Board Bank</h1>
+        <div class="card">
+          <input
+            type="text"
+            id="playerName"
+            placeholder="Your Name"
+            maxlength="10"
+          />
+          <button class="btn btn-primary" id="btnHostMenu">
+            Host New Game (as Bank)
+          </button>
+          <div style="display: flex; gap: 5px">
+            <input
+              type="text"
+              id="gameIdInput"
+              placeholder="Game ID"
+              style="margin: 0; text-transform: uppercase"
+            />
+            <button
+              class="btn btn-outline"
+              id="btnJoin"
+              style="margin: 0; width: 80px"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+        <button id="btnContinue" class="btn btn-success hidden">
+          Continue Last Game
+        </button>
+      </div>
+    </div>
+
+    <div id="historyScreen" class="screen hidden">
+      <div class="screen-inner">
+        <h2>Your Games</h2>
+        <div id="gameHistoryList"></div>
+      </div>
+    </div>
+
+    <div id="hostScreen" class="screen hidden">
+      <div class="screen-inner">
+        <h2>Setup Game</h2>
+        <div class="card">
+          <p style="margin-bottom: 10px; font-weight: bold">
+            Bank Manager: <span id="hostNameDisplay"></span>
+          </p>
+          <label>Starting Money (for each player)</label>
+          <input type="number" id="startMoney" value="1500" min="100" />
+          <label>Bank Balance</label>
+          <input type="number" id="bankMoney" value="10000" min="0" />
+          <button class="btn btn-primary" id="btnCreate">Create Game</button>
+          <button class="btn btn-outline" onclick="showScreen('menuScreen')">
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lobbyScreen" class="screen hidden">
+      <div class="lobby-container">
+        <div class="game-id-section">
+          <div class="game-id-label">GAME ID</div>
+          <div class="game-id-value" id="displayGameId">XXXXX</div>
+        </div>
+
+        <div class="players-title" id="playersTitle">PLAYERS</div>
+
+        <div class="players-list-wrapper">
+          <ul id="playerList"></ul>
+        </div>
+
+        <div class="ready-section">
+          <div id="lobbyMsg"></div>
+          <div id="countdownDisplay" class="hidden"></div>
+          <button class="btn btn-primary" id="btnReady">I'm Ready</button>
+          <button
+            class="btn btn-outline"
+            id="btnLeaveLobby"
+            style="margin-top: 8px"
+          >
+            Back to Menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameScreen" class="screen hidden">
+      <div class="screen-inner">
+        <!-- Normal Player View -->
+        <div id="playerView">
+          <div class="balance-card">
+            <span class="eye-icon" id="toggleBalance">👁️</span>
+            <div
+              style="font-size: 18px; font-weight: 600; margin-bottom: 4px"
+              id="playerNameDisplay"
+            >
+              Your Name
+            </div>
+            <div style="font-size: 14px; opacity: 0.7">Balance</div>
+            <div class="balance-amount" id="balanceDisplay">₹1500</div>
+          </div>
+
+          <div class="actions-grid">
+            <button
+              class="btn btn-primary"
+              style="margin: 0"
+              onclick="openTransferModal()"
+            >
+              Pay Player
+            </button>
+            <button
+              class="btn btn-outline"
+              style="margin: 0"
+              onclick="openRequestModal()"
+            >
+              Request
+            </button>
+          </div>
+        </div>
+
+        <!-- Bank/Host View -->
+        <div id="bankView" class="hidden">
+          <div class="bank-header">
+            <div class="bank-title">🏦 BANK</div>
+            <div class="bank-subtitle">You manage the game as the bank</div>
+            <div style="font-size: 28px; font-weight: 800; margin-top: 12px">
+              Balance: <span id="bankBalanceDisplay">₹10000</span>
+            </div>
+          </div>
+
+          <div class="card" style="border: 2px solid var(--danger)">
+            <h4 style="margin-bottom: 12px">Bank Actions</h4>
+            <button class="btn btn-success" onclick="openTransferModal(true)">
+              Send Money
+            </button>
+            <button
+              id="btnUndoTransaction"
+              class="btn btn-outline"
+              onclick="requestUndo()"
+              disabled
+            >
+              Undo Last Transaction
+            </button>
+            <button class="btn btn-danger" onclick="endGame()">End Game</button>
+          </div>
+
+          <div class="card">
+            <h4 style="margin-bottom: 12px">Players</h4>
+            <ul id="gamePlayerList" style="list-style: none; padding: 0"></ul>
+          </div>
+        </div>
+
+        <button
+        class="btn btn-outline"
+        id="btnLeaveGame"
+        style="margin-bottom: 12px"
+      >
+        Main Menu
+      </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
+        <h3 style="margin: 0; font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: 700;">Recent Activity</h3>
+        <div style="display: flex; gap: 6px;">
+          <button onclick="openBankStatsModal()" style="background: #dc2626; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+            📊 Bank
+          </button>
+          <button onclick="openMyTransactionsModal()" id="myTransBtn" style="background: var(--success); color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+            💰 My Txn
+          </button>
+          <button onclick="openHistoryModal()" style="background: var(--primary); color: white; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+            📜 History
+          </button>
+        </div>
+      </div>
+      <div class="log-container" id="gameLogs"></div>
+      <div style="margin-top: 16px;">
+        <div class="card" style="cursor: pointer; background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); color: white;" onclick="toggleFAQ()">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700;">❓ Do you have doubt?</h3>
+            <span id="faqArrow" style="font-size: 20px; transition: transform 0.3s;">▼</span>
+          </div>
+        </div>
+        
+        <div id="faqContent" class="hidden" style="margin-top: 8px;">
+          <!-- Getting Started -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('starting')">
+              <span>🎮 Getting Started</span>
+              <span id="arrow-starting" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-starting" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid var(--primary);">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How much money do I start with?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Each player starts with ₹30,000 to ₹50,000 (decided at game start). Money can be distributed at the beginning or during the game.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I start the game?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Each player rolls the dice. The player with the highest total starts. Other players follow clockwise. The peg remains on the space occupied and proceeds from that point during the player's next turn.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What happens when I pass START?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Collect ₹1,500 from the Bank every time you pass or land on START.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Jail Rules -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('jail')">
+              <span>🚔 Jail Rules</span>
+              <span id="arrow-jail" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-jail" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid var(--danger);">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I go to Jail?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">You go to JAIL in these cases:<br>
+                1) When your peg's usual roll of dice comes to JAIL<br>
+                2) When instructed to go JAIL by Chance or Community Chest card<br>
+                3) When you roll doubles three times in succession</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I get out of Jail?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">You can get out by:<br>
+                1) After arriving in JAIL, roll dice three times in succession. If any of the three turns has doubles, you move forward as per number shown by dice<br>
+                2) If you were sent to Jail by Chance/Community Chest, pay ₹500 to the Bank<br>
+                3) Pay a fine of ₹500 during your detention in JAIL. You can then roll the dice with or without houses or hotels</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: Can I collect rent while in Jail?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">YES! You can still collect rent even though you're in JAIL.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Tax Rules -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('tax')">
+              <span>💰 Tax Rules</span>
+              <span id="arrow-tax" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-tax" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid var(--success);">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How much is Income Tax?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Pay ₹50 for each site (property) owned when you land on INCOME TAX. Maximum tax is ₹500.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How much is Wealth Tax?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">When you land on WEALTH TAX, pay:<br>
+                • ₹50 for each house<br>
+                • ₹100 for each hotel<br>
+                Maximum tax is ₹500.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Special Spaces -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('special')">
+              <span>⭐ Special Spaces</span>
+              <span id="arrow-special" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-special" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #f59e0b;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What happens at REST HOUSE?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">When you land on Rest House, you receive ₹100 from EACH player.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What happens at CLUB?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">When you land on Club, you must give ₹100 to EACH player.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Properties & Buildings -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('property')">
+              <span>🏠 Properties & Buildings</span>
+              <span id="arrow-property" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-property" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #8b5cf6;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I buy properties?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">When you land on an unowned property, you can buy it by paying the amount shown on the Title Deed Card. Bank only sells to those who arrive at a particular site by roll of dice.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I build houses and hotels?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">You can build houses/hotels by paying the amount shown in Title Deed Card. Color coding:<br>
+                • Green House pegs = 1 house<br>
+                • Red House pegs = 2 houses<br>
+                • Blue House pegs = hotels<br>
+                You must own at least TWO sites of any color group to build. Building must be done evenly - you can't build more than one house on any site until you've built one house on each site of that color group.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What if I own all sites of one color?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If you own three sites of the same color group, the rent charged is DOUBLE on all undeveloped sites of the same color group. This advantage means rental profits are much higher!</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How many houses can I build on one site?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Maximum THREE houses can be built on a site. After the first property erection of a color group, ownership of three sites of same series is not compulsory - you can erect one house on each site of a complete color group of three sites.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Mortgages -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('mortgage')">
+              <span>💳 Mortgages</span>
+              <span id="arrow-mortgage" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-mortgage" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #dc2626;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do mortgages work?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">You can mortgage properties through the Bank only. Mortgage value = Half of the Title Deed Card price. When you mortgage, place the Title Deed Card face down.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I unmortgage a property?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Pay the mortgage amount PLUS 10% interest on mortgaged property. The Title Deed Card is then flipped up.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: Can I transfer mortgaged property?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Yes. If any property is transferred which is mortgaged, the new owner may lift the mortgage at once by paying to the Bank 10% interest on mortgaged property's value plus principal.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Dice & Movement -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('dice')">
+              <span>🎲 Dice & Movement</span>
+              <span id="arrow-dice" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-dice" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #22c55e;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What happens if I roll doubles?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If you get a DOUBLE (both dice showing same number), the sum of both is effective, but you're NOT subject to any privileges or penalties printed on that site. You have to move once more.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What if I roll doubles three times?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If you get a double for the third time in succession, you don't move your peg but immediately GO TO JAIL.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: Can multiple players be on the same space?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">YES! Two or more pegs may rest on the same space.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Bankruptcy -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('bankruptcy')">
+              <span>💸 Bankruptcy</span>
+              <span id="arrow-bankruptcy" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-bankruptcy" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #ef4444;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What happens if I can't pay?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If you owe more than you have, return all sites (properties) to the creditor. You are then BANKRUPT and RETIRE FROM THE GAME.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What if I owe the Bank?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If you owe money to the Bank, the Bank will auction your properties. Whatever is left after paying the debt goes to you. However, if nothing is left, you are BANKRUPT and out of the game.</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Winning -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('winning')">
+              <span>🏆 How to Win</span>
+              <span id="arrow-winning" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-winning" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #fbbf24;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: How do I win the game?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">The WINNER is the player who:<br>
+                1) Bankrupts all other players, OR<br>
+                2) Has the most money/properties at an agreed time limit</p>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Bank Rules -->
+          <div class="card">
+            <div style="cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSection('bank')">
+              <span>🏦 Bank Rules</span>
+              <span id="arrow-bank" style="transition: transform 0.3s;">▼</span>
+            </div>
+            <div id="section-bank" class="hidden" style="margin-top: 12px; padding-left: 8px; border-left: 3px solid #dc2626;">
+              <div style="margin-bottom: 12px;">
+                <strong>Q: Can the Bank run out of money?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">NO! The Bank NEVER goes BANKRUPT. The Bank owns all money and properties except what players have.</p>
+              </div>
+              <div style="margin-bottom: 12px;">
+                <strong>Q: What if the Bank runs out of houses?</strong>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">If the Bank has no houses to sell, players must wait until someone returns or sells houses back to the Bank before building.</p>
+              </div>
+            </div>
+          </div>
+      
+        </div>
+      </div>
+      <!-- END FAQ SECTION -->
+      </div>
+    </div>
+
+    <div
+      id="transferUI"
+      class="screen hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 50;
+      "
+    >
+      <div class="screen-inner">
+        <h2 id="transferTitle">Transfer</h2>
+        <select id="transferTarget"></select>
+        <input type="number" id="transferAmount" placeholder="Amount" />
+        <button class="btn btn-success" id="btnConfirmTransfer">Send</button>
+        <button class="btn btn-outline" onclick="closeTransferUI()">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="requestUI"
+      class="screen hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 50;
+      "
+    >
+      <div class="screen-inner">
+        <h2>Request Money</h2>
+        <label style="font-size: 14px; color: #64748b; margin-bottom: 8px; display: block;">Request From:</label>
+        <select id="requestTarget"></select>
+        <input
+          type="number"
+          id="requestAmount"
+          placeholder="Amount to request"
+        />
+        <button class="btn btn-success" id="btnConfirmRequest">
+          Send Request
+        </button>
+        <button class="btn btn-outline" onclick="closeRequestUI()">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="historyUI"
+      class="screen hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 50;
+      "
+    >
+      <div class="screen-inner">
+        <h2>Complete Log History</h2>
+        <input
+          type="text"
+          id="historySearch"
+          placeholder="🔍 Search logs (name, amount, keywords...)"
+          style="margin-bottom: 12px;"
+        />
+        <div class="log-container" id="historyLogs" style="height: 60vh; max-height: 60vh;"></div>
+        <button class="btn btn-outline" onclick="closeHistoryModal()">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="bankStatsUI"
+      class="screen hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 50;
+      "
+    >
+      <div class="screen-inner">
+        <h2>🏦 Bank Statistics</h2>
+        <div class="card" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; text-align: center;">
+          <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Total Paid Out</div>
+          <div style="font-size: 32px; font-weight: 800;" id="bankTotalPaid">₹0</div>
+          <div style="font-size: 14px; opacity: 0.9; margin-top: 16px; margin-bottom: 4px;">Total Received</div>
+          <div style="font-size: 32px; font-weight: 800;" id="bankTotalReceived">₹0</div>
+        </div>
+        
+        <h3 style="margin-top: 16px; margin-bottom: 8px;">Top Recipients (from Bank)</h3>
+        <div class="log-container" id="bankPaidList" style="max-height: 25vh; min-height: 100px;"></div>
+        
+        <h3 style="margin-top: 16px; margin-bottom: 8px;">Top Contributors (to Bank)</h3>
+        <div class="log-container" id="bankReceivedList" style="max-height: 25vh; min-height: 100px;"></div>
+        
+        <button class="btn btn-outline" onclick="closeBankStatsModal()">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="myTransactionsUI"
+      class="screen hidden"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 50;
+      "
+    >
+      <div class="screen-inner">
+        <h2>💰 My Transactions</h2>
+        <div class="card" style="background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%); color: white;">
+          <div style="display: flex; justify-content: space-around; text-align: center;">
+            <div>
+              <div style="font-size: 12px; opacity: 0.9;">Received</div>
+              <div style="font-size: 24px; font-weight: 800; color: #dcfce7;" id="myTotalReceived">+₹0</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; opacity: 0.9;">Paid</div>
+              <div style="font-size: 24px; font-weight: 800; color: #fecaca;" id="myTotalPaid">-₹0</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; opacity: 0.9;">Net</div>
+              <div style="font-size: 24px; font-weight: 800;" id="myNet">₹0</div>
+            </div>
+          </div>
+        </div>
+        
+        <h3 style="margin-top: 16px; margin-bottom: 8px;">Transaction History</h3>
+        <div class="log-container" id="myTransactionsList" style="height: 50vh; max-height: 50vh;"></div>
+        
+        <button class="btn btn-outline" onclick="closeMyTransactionsModal()">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <div id="endScreen" class="screen hidden">
+      <div class="screen-inner">
+        <h1>Game Over</h1>
+        <div class="card">
+          <h3>Final Balances</h3>
+          <ul id="finalList" style="list-style: none"></ul>
+        </div>
+        <button class="btn btn-primary" onclick="location.reload()">
+          Back to Menu
+        </button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io(window.location.origin);
+
+      let reconnectAttempts = 0;
+let isReconnecting = false;
+
+socket.on("connect", () => {
+  console.log("✅ Connected to server!");
+  reconnectAttempts = 0;
+  
+  // If we were in a game, rejoin automatically
+  if (myGameId && myName && isReconnecting) {
+    console.log("🔄 Auto-rejoining game after reconnection...");
+    socket.emit('joinGame', {
+      gameId: myGameId,
+      name: myName,
+      type: isHost ? 'host' : 'join'
+    });
+    isReconnecting = false;
+  }
+});
+
+socket.on("connect_error", (err) => {
+  console.error("❌ Connection Error:", err);
+  reconnectAttempts++;
+  if (reconnectAttempts === 1) {
+    console.log("Attempting to reconnect...");
+  }
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("❌ Disconnected from server. Reason:", reason);
+  
+  // Mark that we need to rejoin when reconnected
+  if (myGameId && myName) {
+    isReconnecting = true;
+    console.log("Will attempt to rejoin game when connection is restored...");
+  }
+});
+
+      // State
+      let myGameId = null;
+      let myName = null;
+      let isHost = false;
+      let isReady = false;
+      let isBankAction = false;
+      let tempHostName = null;
+      let countdownInterval = null;
+      let allGameLogs = [];
+
+      let myTransactions = [];
+      let bankStats = { totalReceived: 0, totalPaid: 0, receivedFrom: {}, paidTo: {} };
+
+      // Handle page visibility changes (screen off, tab switching)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && myGameId && myName) {
+    console.log("👁️ Page visible again, checking connection...");
+    
+    // Check if socket is connected
+    if (!socket.connected) {
+      console.log("🔌 Socket disconnected, attempting to reconnect...");
+      socket.connect();
+    } else {
+      // Even if connected, request fresh game state
+      console.log("🔄 Requesting fresh game state...");
+      socket.emit('requestGameState', { gameId: myGameId, name: myName });
+    }
+  }
+});
+
+// Handle online/offline events
+window.addEventListener('online', () => {
+  console.log("🌐 Back online!");
+  if (myGameId && myName && !socket.connected) {
+    console.log("🔌 Reconnecting...");
+    socket.connect();
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log("📡 Connection lost (offline)");
+});
+
+      // --- SOUND EFFECTS ---
+      function playMoneyReceivedSound() {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Lottery/slot machine sound
+        const playNote = (freq, startTime, duration) => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = freq;
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0.3, startTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          
+          oscillator.start(startTime);
+          oscillator.stop(startTime + duration);
+        };
+        
+        const now = audioContext.currentTime;
+        playNote(523.25, now, 0.1);       // C
+        playNote(659.25, now + 0.1, 0.1); // E
+        playNote(783.99, now + 0.2, 0.1); // G
+        playNote(1046.50, now + 0.3, 0.3); // C (high)
+      }
+
+      function playRequestSound() {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Bird chirp sound
+        const playChirp = (startFreq, endFreq, startTime, duration) => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(startFreq, startTime);
+          oscillator.frequency.exponentialRampToValueAtTime(endFreq, startTime + duration);
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0.2, startTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          
+          oscillator.start(startTime);
+          oscillator.stop(startTime + duration);
+        };
+        
+        const now = audioContext.currentTime;
+        playChirp(1200, 2000, now, 0.1);
+        playChirp(2000, 2400, now + 0.15, 0.1);
+      }
+
+      // Elements
+      const screens = [
+        "menuScreen",
+        "historyScreen",
+        "hostScreen",
+        "lobbyScreen",
+        "gameScreen",
+        "endScreen",
+        "transferUI",
+      ];
+
+      // --- NAVIGATION ---
+      function showScreen(id) {
+        screens.forEach((s) => {
+          const el = document.getElementById(s);
+          if (el) el.classList.add("hidden");
+        });
+        const targetScreen = document.getElementById(id);
+        if (targetScreen) targetScreen.classList.remove("hidden");
+      }
+
+      // --- LOCAL STORAGE (MULTIPLE GAMES) ---
+      function getGameHistory() {
+        const history = localStorage.getItem("boardGameHistory");
+        return history ? JSON.parse(history) : [];
+      }
+
+      function saveGameToHistory(gameId, name, isHost) {
+        let history = getGameHistory();
+        history = history.filter(
+          (g) => !(g.gameId === gameId && g.name === name)
+        );
+        history.unshift({
+          gameId,
+          name,
+          isHost: isHost || false,
+          timestamp: Date.now(),
+        });
+        history = history.slice(0, 10);
+        localStorage.setItem("boardGameHistory", JSON.stringify(history));
+      }
+
+      function deleteGameFromHistory(gameId, name) {
+        let history = getGameHistory();
+        history = history.filter(
+          (g) => !(g.gameId === gameId && g.name === name)
+        );
+        localStorage.setItem("boardGameHistory", JSON.stringify(history));
+        updateContinueButton();
+        showGameHistory();
+      }
+
+      function showGameHistory() {
+        const history = getGameHistory();
+        const container = document.getElementById("gameHistoryList");
+        container.innerHTML = "";
+
+        if (history.length === 0) {
+          container.innerHTML = `
+                  <div style="text-align: center; padding: 40px 20px;">
+                      <h3 style="color: #64748b; margin-bottom: 20px;">No games available</h3>
+                      <button class="btn btn-outline" onclick="showScreen('menuScreen')">Back to Menu</button>
+                  </div>
+              `;
+          showScreen("historyScreen");
+          return;
+        }
+
+        history.forEach((game) => {
+          const div = document.createElement("div");
+          div.className = "game-history-item";
+
+          const info = document.createElement("div");
+          info.className = "game-history-info";
+          info.innerHTML = `
+                  <div class="game-history-id">${game.gameId}</div>
+                  <div class="game-history-name">as ${game.name} ${
+            game.isHost ? "(Bank)" : ""
+          }</div>
+              `;
+          info.onclick = () => {
+            joinGame(game.gameId, game.name, game.isHost ? "host" : "join");
+          };
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-game-btn";
+          deleteBtn.textContent = "🗑️";
+          deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(`Delete ${game.gameId} from history?`)) {
+              deleteGameFromHistory(game.gameId, game.name);
+            }
+          };
+
+          div.appendChild(info);
+          div.appendChild(deleteBtn);
+          container.appendChild(div);
+        });
+
+        // Add Back button at the end when there are games
+        const backBtn = document.createElement("button");
+        backBtn.className = "btn btn-outline";
+        backBtn.textContent = "Back";
+        backBtn.onclick = () => showScreen("menuScreen");
+        container.appendChild(backBtn);
+
+        showScreen("historyScreen");
+      }
+
+      // Check if history exists
+      function updateContinueButton() {
+        const history = getGameHistory();
+        const btn = document.getElementById("btnContinue");
+        if (history.length > 0) {
+          btn.classList.remove("hidden");
+          btn.onclick = showGameHistory;
+        } else {
+          btn.classList.add("hidden");
+        }
+      }
+
+      updateContinueButton();
+
+      // --- EVENT LISTENERS ---
+      document.getElementById("btnHostMenu").onclick = () => {
+        tempHostName = "Bank";
+        document.getElementById("hostNameDisplay").textContent = "Bank Manager";
+        showScreen("hostScreen");
+      };
+
+      document.getElementById("btnCreate").onclick = () => {
+        const money = document.getElementById("startMoney").value;
+        const bankMoney = document.getElementById("bankMoney").value;
+        if (!tempHostName) {
+          alert("Error: Name not found. Please go back and enter your name.");
+          return;
+        }
+        if (!money || money < 100) {
+          alert("Please enter a valid starting amount (minimum ₹100)");
+          return;
+        }
+        if (!bankMoney || bankMoney < 0) {
+          alert("Please enter a valid bank balance (minimum ₹0)");
+          return;
+        }
+        joinGame(null, tempHostName, "host", money, bankMoney);
+      };
+
+      document.getElementById("btnJoin").onclick = () => {
+        const name = document.getElementById("playerName").value.trim();
+        const gid = document.getElementById("gameIdInput").value.trim();
+        if (!name || !gid) return alert("Enter name and Game ID");
+        joinGame(gid.toUpperCase(), name, "join");
+      };
+
+      document.getElementById("btnReady").onclick = () => {
+        console.log("🔘 Ready button clicked!");
+        socket.emit("toggleReady", { gameId: myGameId });
+      };
+
+      document.getElementById("toggleBalance").onclick = () => {
+        const el = document.getElementById("balanceDisplay");
+        if (el.style.filter === "blur(10px)") {
+          el.style.filter = "none";
+        } else {
+          el.style.filter = "blur(10px)";
+        }
+      };
+
+      document.getElementById("btnLeaveLobby").onclick = () => {
+        if (confirm("Leave the lobby and return to menu?")) {
+          // Emit leave event and wait for server to process
+          socket.emit("leaveLobby", { gameId: myGameId, playerName: myName });
+
+          // Longer delay to ensure server processes and broadcasts update
+          setTimeout(() => {
+            location.reload();
+          }, 500);
+        }
+      };
+
+      document.getElementById("btnLeaveGame").onclick = () => {
+        if (confirm("Leave game and return to menu? You can rejoin anytime.")) {
+          location.reload();
+        }
+      };
+
+      // --- CORE FUNCTIONS ---
+      function joinGame(gid, name, type, money, bankMoney) {
+        console.log("📤 Emitting joinGame:", {
+          gameId: gid,
+          name,
+          type,
+          startingMoney: money,
+          bankBalance: bankMoney,
+        });
+        socket.emit("joinGame", {
+          gameId: gid,
+          name,
+          type,
+          startingMoney: money,
+          bankBalance: bankMoney,
+        });
+      }
+
+      function kickPlayer(playerName) {
+        socket.emit("kickPlayer", { gameId: myGameId, playerName });
+      }
+
+      function startCountdown() {
+        let count = 5;
+        const countdownEl = document.getElementById("countdownDisplay");
+        const msgEl = document.getElementById("lobbyMsg");
+
+        countdownEl.classList.remove("hidden");
+        countdownEl.className = "countdown-timer";
+
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        countdownInterval = setInterval(() => {
+          if (count > 0) {
+            countdownEl.textContent = count;
+            msgEl.textContent = `Starting in ${count}...`;
+            count--;
+          } else {
+            countdownEl.textContent = "GO!";
+            setTimeout(() => {
+              countdownEl.classList.add("hidden");
+              clearInterval(countdownInterval);
+            }, 500);
+          }
+        }, 1000);
+      }
+
+      // --- SOCKET EVENTS ---
+      socket.on("gameJoined", (data) => {
+        console.log("✅ gameJoined received:", data);
+        myGameId = data.gameId;
+        myName = data.name;
+        isHost = data.isHost;
+
+        document.getElementById("playerNameDisplay").textContent = myName;
+
+        saveGameToHistory(myGameId, myName, isHost);
+        updateContinueButton();
+
+        // **FIX: Update balance immediately for non-host players**
+        if (!isHost && data.balance !== undefined) {
+          document.getElementById("balanceDisplay").textContent =
+            "₹" + data.balance;
+        }
+        // Update bank balance for host
+        if (isHost && data.bankBalance !== undefined) {
+          document.getElementById("bankBalanceDisplay").textContent =
+            "₹" + data.bankBalance;
+        }
+
+        // If game is active, go straight to game screen
+        if (data.status === "active") {
+          console.log("🎮 Game already active, joining game screen");
+          showScreen("gameScreen");
+
+          if (isHost) {
+            document.getElementById("playerView").classList.add("hidden");
+            document.getElementById("bankView").classList.remove("hidden");
+
+            document.getElementById("myTransBtn").style.display = "none";
+
+          } else {
+            document.getElementById("playerView").classList.remove("hidden");
+            document.getElementById("bankView").classList.add("hidden");
+            // Balance already updated above
+          }
+        } else {
+          // Game is in lobby
+          console.log("🎮 Joining lobby");
+          document.getElementById("displayGameId").textContent = myGameId;
+
+          if (isHost) {
+            document.getElementById("playersTitle").textContent =
+              "PLAYERS (You are Bank)";
+            document.getElementById("btnReady").classList.add("hidden");
+          } else {
+            document.getElementById("playersTitle").textContent = "PLAYERS";
+            document.getElementById("btnReady").classList.remove("hidden");
+          }
+
+          showScreen("lobbyScreen");
+        }
+      });
+
+      socket.on("error", (msg) => {
+        console.error("❌ Server error:", msg);
+        alert(msg);
+      });
+
+      socket.on("kicked", () => {
+        alert("You have been kicked from the game by the host.");
+        location.reload();
+      });
+
+      socket.on("updatePlayerList", (players) => {
+        const list = document.getElementById("playerList");
+        list.innerHTML = "";
+
+        players.forEach((p) => {
+          const li = document.createElement("li");
+
+          const playerInfo = document.createElement("div");
+          playerInfo.className = "player-info";
+          const displayName = p.name === myName ? `${p.name} (you)` : p.name;
+          playerInfo.innerHTML = `<span class="player-name">${displayName}</span>`;
+
+          const playerActions = document.createElement("div");
+          playerActions.className = "player-actions";
+
+          if (isHost && p.name !== myName) {
+            const kickBtn = document.createElement("button");
+            kickBtn.className = "kick-btn";
+            kickBtn.textContent = "✕";
+            kickBtn.onclick = (e) => {
+              e.stopPropagation();
+              kickPlayer(p.name);
+            };
+            playerActions.appendChild(kickBtn);
+          }
+
+          const badge = document.createElement("span");
+          badge.className = `status-badge ${p.isReady ? "ready" : "not-ready"}`;
+          badge.textContent = p.isReady ? "READY" : "WAITING";
+          playerActions.appendChild(badge);
+
+          li.appendChild(playerInfo);
+          li.appendChild(playerActions);
+          list.appendChild(li);
+        });
+
+        const me = players.find((p) => p.name === myName);
+        if (me) {
+          const btn = document.getElementById("btnReady");
+          btn.textContent = me.isReady ? "I'm Not Ready" : "I'm Ready";
+          btn.className = me.isReady ? "btn btn-outline" : "btn btn-primary";
+        }
+
+        updateTransferDropdown(players);
+
+        // Update game screen player list for host
+        if (isHost) {
+          const gameList = document.getElementById("gamePlayerList");
+          if (gameList) {
+            gameList.innerHTML = "";
+            players.forEach((p) => {
+              const li = document.createElement("li");
+              li.style.padding = "12px";
+              li.style.borderBottom = "1px solid #f1f5f9";
+              li.style.display = "flex";
+              li.style.justifyContent = "space-between";
+              li.style.alignItems = "center";
+
+              const nameSpan = document.createElement("span");
+              nameSpan.textContent = p.name;
+              nameSpan.style.fontWeight = "600";
+
+              const kickBtn = document.createElement("button");
+              kickBtn.className = "kick-btn";
+              kickBtn.textContent = "✕ Kick";
+              kickBtn.onclick = () => kickPlayer(p.name);
+
+              li.appendChild(nameSpan);
+              li.appendChild(kickBtn);
+              gameList.appendChild(li);
+            });
+          }
+        }
+      });
+
+      socket.on("startCountdown", () => {
+        startCountdown();
+      });
+
+      socket.on("cancelCountdown", () => {
+        if (countdownInterval) clearInterval(countdownInterval);
+        const countdownEl = document.getElementById("countdownDisplay");
+        const msgEl = document.getElementById("lobbyMsg");
+        countdownEl.classList.add("hidden");
+        msgEl.textContent = "";
+      });
+
+      socket.on("startGame", () => {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        showScreen("gameScreen");
+
+        if (isHost) {
+          document.getElementById("playerView").classList.add("hidden");
+          document.getElementById("bankView").classList.remove("hidden");
+
+          document.getElementById("myTransBtn").style.display = "none";
+
+          // Reset undo button state on rejoin
+          const undoBtn = document.getElementById("btnUndoTransaction");
+          if (undoBtn) {
+            undoBtn.disabled = true;
+            undoBtn.textContent = "Undo Last Transaction";
+          }
+        } else {
+          document.getElementById("playerView").classList.remove("hidden");
+          document.getElementById("bankView").classList.add("hidden");
+
+          document.getElementById("myTransBtn").style.display = "block";
+        }
+      });
+
+      socket.on("gameStateActive", (data) => {
+        showScreen("gameScreen");
+        if (!isHost && data.balance !== undefined) {
+          document.getElementById("balanceDisplay").textContent =
+            "₹" + data.balance;
+        }
+      });
+
+      // --- GAME LOGIC ---
+      function updateTransferDropdown(players) {
+        const select = document.getElementById("transferTarget");
+        select.innerHTML = '<option value="EVERYONE">Everyone</option>';
+
+        // Add BANK option for non-host players
+        if (!isHost) {
+          const bankOpt = document.createElement("option");
+          bankOpt.value = "BANK";
+          bankOpt.textContent = "🏦 Bank";
+          select.appendChild(bankOpt);
+        }
+
+        players.forEach((p) => {
+          if (p.name !== myName) {
+            // SKIP SELF
+            const opt = document.createElement("option");
+            opt.value = p.name;
+            opt.textContent = p.name;
+            select.appendChild(opt);
+          }
+        });
+      }
+
+      socket.on("balanceUpdate", (data) => {
+  const oldBalance = parseInt(document.getElementById("balanceDisplay").textContent.replace('₹', '')) || 0;
+  const newBalance = typeof data === 'object' ? data.balance : data;
+  const difference = newBalance - oldBalance;
+  
+  document.getElementById("balanceDisplay").textContent = "₹" + newBalance;
+  
+  // Track transaction with details from server
+  if (difference !== 0 && typeof data === 'object' && data.lastTransaction) {
+    const trans = data.lastTransaction;
+    let fromTo = 'Unknown';
+    let transactionType = difference > 0 ? 'received' : 'paid';
+    let isUndo = data.context === 'undo';
+    
+    if (isUndo) {
+      // Handle UNDO transactions
+      if (trans.type === 'UNDO_FROM_BANK') {
+        // Bank took money back
+        fromTo = 'Bank';
+        transactionType = 'paid';
+      } else if (trans.type === 'UNDO_TO_BANK') {
+        // Got refund from bank
+        fromTo = 'Bank';
+        transactionType = 'received';
+      } else if (trans.type === 'UNDO_INDIVIDUAL') {
+        // Person took money back
+        fromTo = trans.to;
+        transactionType = 'paid';
+      } else if (trans.type === 'UNDO_EVERYONE') {
+        // Everyone payment undone
+        fromTo = trans.from === 'BANK' ? 'Bank' : trans.from;
+        transactionType = 'paid';
+      }
+    } else {
+      // Normal transactions
+      if (difference > 0) {
+        // Received money
+        if (trans.type === 'INDIVIDUAL') {
+          fromTo = trans.from === 'BANK' ? 'Bank' : trans.from;
+        } else if (trans.type === 'EVERYONE') {
+          fromTo = trans.from === 'BANK' ? 'Bank' : trans.from;
+        }
+      } else {
+        // Paid money
+        if (trans.type === 'TO_BANK') {
+          fromTo = 'Bank';
+        } else if (trans.type === 'INDIVIDUAL') {
+          fromTo = trans.to;
+        } else if (trans.type === 'EVERYONE') {
+          fromTo = 'Everyone';
+        }
+      }
+    }
+    
+    myTransactions.push({
+      type: transactionType,
+      amount: Math.abs(difference),
+      fromTo: fromTo,
+      isUndo: isUndo,
+      time: Date.now(),
+      balance: newBalance
+    });
+    
+    // Play sound if balance increased (but not for undos)
+    if (difference > 0 && !isUndo) {
+      playMoneyReceivedSound();
+    }
+  }
+});
+
+      socket.on("bankStatsUpdate", (stats) => {
+        bankStats = stats;
+      });
+
+      socket.on("updateLogs", (logs) => {
+        // Store all logs globally
+        allGameLogs = logs;
+        
+        const container = document.getElementById("gameLogs");
+        container.innerHTML = "";
+
+        // Show only last 20 logs in public view
+        const recentLogs = logs.slice(0, 20);
+        const now = Date.now();
+
+        recentLogs.forEach((l) => {
+          const div = document.createElement("div");
+          const isRecent = now - l.time < 30000;
+          div.className = isRecent ? "log-item new" : "log-item";
+          if (!isRecent) {
+            div.style.color = "#94a3b8";
+          }
+          div.textContent = l.msg;
+          container.appendChild(div);
+        });
+
+        // Add indicator if there are more logs
+        if (logs.length > 20) {
+          const moreDiv = document.createElement("div");
+          moreDiv.style.padding = "8px";
+          moreDiv.style.textAlign = "center";
+          moreDiv.style.color = "#64748b";
+          moreDiv.style.fontSize = "12px";
+          moreDiv.style.fontStyle = "italic";
+          moreDiv.textContent = `+ ${logs.length - 20} older logs (view in History)`;
+          container.appendChild(moreDiv);
+        }
+      });
+
+      // --- TRANSFERS ---
+      function openTransferModal(bankMode = false) {
+        isBankAction = bankMode;
+        document.getElementById("transferTitle").textContent = bankMode
+          ? "Bank Transfer"
+          : "Pay Player";
+        showScreen("transferUI");
+      }
+
+      function closeTransferUI() {
+        document.getElementById("transferUI").classList.add("hidden");
+        document.getElementById("gameScreen").classList.remove("hidden");
+      }
+
+      document.getElementById("btnConfirmTransfer").onclick = () => {
+        const to = document.getElementById("transferTarget").value;
+        const amt = document.getElementById("transferAmount").value;
+        if (!to || !amt || amt <= 0) {
+          alert("Please select a player and enter a valid amount");
+          return;
+        }
+
+        socket.emit("transfer", {
+          gameId: myGameId,
+          toName: to,
+          amount: amt,
+          isBank: isBankAction,
+        });
+
+        closeTransferUI();
+        document.getElementById("transferAmount").value = "";
+      };
+
+      // --- REQUESTS ---
+      // --- REQUESTS ---
+      function openRequestModal() {
+        updateRequestDropdown();
+        showScreen("requestUI");
+      }
+
+      function closeRequestUI() {
+        document.getElementById("requestUI").classList.add("hidden");
+        document.getElementById("gameScreen").classList.remove("hidden");
+      }
+
+      function updateRequestDropdown() {
+        const select = document.getElementById("requestTarget");
+        select.innerHTML = '<option value="EVERYONE">Everyone</option>';
+
+        // Add BANK option
+        const bankOpt = document.createElement("option");
+        bankOpt.value = "BANK";
+        bankOpt.textContent = "🏦 Bank";
+        select.appendChild(bankOpt);
+
+        // Get current player list
+        const players = document.querySelectorAll('#playerList li');
+        players.forEach((li) => {
+          const nameEl = li.querySelector('.player-name');
+          if (nameEl) {
+            const playerName = nameEl.textContent.replace(' (you)', '').trim();
+            if (playerName !== myName) {
+              const opt = document.createElement("option");
+              opt.value = playerName;
+              opt.textContent = playerName;
+              select.appendChild(opt);
+            }
+          }
+        });
+      }
+
+      document.getElementById("btnConfirmRequest").onclick = () => {
+        const target = document.getElementById("requestTarget").value;
+        const amt = document.getElementById("requestAmount").value;
+        if (!target || !amt || amt <= 0) {
+          alert("Please select a target and enter a valid amount");
+          return;
+        }
+
+        socket.emit("requestMoney", { 
+          gameId: myGameId, 
+          amount: amt,
+          targetName: target
+        });
+        closeRequestUI();
+        document.getElementById("requestAmount").value = "";
+      };
+
+      // --- HISTORY MODAL ---
+      function openHistoryModal() {
+        const historyContainer = document.getElementById("historyLogs");
+        historyContainer.innerHTML = "";
+        
+        // Display all logs
+        allGameLogs.forEach((l) => {
+          const div = document.createElement("div");
+          div.className = "log-item";
+          div.textContent = l.msg;
+          div.style.borderBottom = "1px solid #f1f5f9";
+          historyContainer.appendChild(div);
+        });
+
+        if (allGameLogs.length === 0) {
+          historyContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No logs yet</div>';
+        }
+
+        showScreen("historyUI");
+      }
+
+      function closeHistoryModal() {
+        document.getElementById("historyUI").classList.add("hidden");
+        document.getElementById("gameScreen").classList.remove("hidden");
+        document.getElementById("historySearch").value = "";
+      }
+
+      // Search functionality for history
+      document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById("historySearch");
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const historyContainer = document.getElementById("historyLogs");
+            historyContainer.innerHTML = "";
+
+            const filteredLogs = allGameLogs.filter(log => 
+              log.msg.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredLogs.length === 0) {
+              historyContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No matching logs found</div>';
+            } else {
+              filteredLogs.forEach((l) => {
+                const div = document.createElement("div");
+                div.className = "log-item";
+                div.textContent = l.msg;
+                div.style.borderBottom = "1px solid #f1f5f9";
+                
+                // Highlight search term
+                if (searchTerm) {
+                  const regex = new RegExp(`(${searchTerm})`, 'gi');
+                  div.innerHTML = l.msg.replace(regex, '<span style="background: #fef08a; font-weight: bold;">$1</span>');
+                }
+                
+                historyContainer.appendChild(div);
+              });
+            }
+          });
+        }
+      });
+
+      // --- BANK STATS MODAL ---
+      function openBankStatsModal() {
+        document.getElementById("bankTotalPaid").textContent = "₹" + bankStats.totalPaid;
+        document.getElementById("bankTotalReceived").textContent = "₹" + bankStats.totalReceived;
+        
+        // Top recipients
+        const paidList = document.getElementById("bankPaidList");
+        paidList.innerHTML = "";
+        const sortedPaid = Object.entries(bankStats.paidTo).sort((a, b) => b[1] - a[1]);
+        
+        if (sortedPaid.length === 0) {
+          paidList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No payments from bank yet</div>';
+        } else {
+          sortedPaid.forEach(([name, amount], index) => {
+            const div = document.createElement("div");
+            div.style.padding = "12px";
+            div.style.borderBottom = "1px solid #f1f5f9";
+            div.style.display = "flex";
+            div.style.justifyContent = "space-between";
+            div.style.alignItems = "center";
+            div.innerHTML = `
+              <span><strong>#${index + 1}</strong> ${name}</span>
+              <span style="color: var(--success); font-weight: 700;">+₹${amount}</span>
+            `;
+            paidList.appendChild(div);
+          });
+        }
+        
+        // Top contributors
+        const receivedList = document.getElementById("bankReceivedList");
+        receivedList.innerHTML = "";
+        const sortedReceived = Object.entries(bankStats.receivedFrom).sort((a, b) => b[1] - a[1]);
+        
+        if (sortedReceived.length === 0) {
+          receivedList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No payments to bank yet</div>';
+        } else {
+          sortedReceived.forEach(([name, amount], index) => {
+            const div = document.createElement("div");
+            div.style.padding = "12px";
+            div.style.borderBottom = "1px solid #f1f5f9";
+            div.style.display = "flex";
+            div.style.justifyContent = "space-between";
+            div.style.alignItems = "center";
+            div.innerHTML = `
+              <span><strong>#${index + 1}</strong> ${name}</span>
+              <span style="color: var(--danger); font-weight: 700;">-₹${amount}</span>
+            `;
+            receivedList.appendChild(div);
+          });
+        }
+        
+        showScreen("bankStatsUI");
+      }
+
+      function closeBankStatsModal() {
+        document.getElementById("bankStatsUI").classList.add("hidden");
+        document.getElementById("gameScreen").classList.remove("hidden");
+      }
+
+      // --- MY TRANSACTIONS MODAL ---
+      function openMyTransactionsModal() {
+        let totalReceived = 0;
+        let totalPaid = 0;
+        
+        myTransactions.forEach(t => {
+          if (t.type === 'received') totalReceived += t.amount;
+          else totalPaid += t.amount;
+        });
+        
+        const net = totalReceived - totalPaid;
+        
+        document.getElementById("myTotalReceived").textContent = "+₹" + totalReceived;
+        document.getElementById("myTotalPaid").textContent = "-₹" + totalPaid;
+        document.getElementById("myNet").textContent = (net >= 0 ? "+₹" : "-₹") + Math.abs(net);
+        document.getElementById("myNet").style.color = net >= 0 ? "#dcfce7" : "#fecaca";
+        
+        const transList = document.getElementById("myTransactionsList");
+        transList.innerHTML = "";
+        
+        if (myTransactions.length === 0) {
+  transList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No transactions yet</div>';
+} else {
+  // Show in reverse order (most recent first)
+  [...myTransactions].reverse().forEach(t => {
+    const div = document.createElement("div");
+    div.style.padding = "10px";
+    div.style.borderBottom = "1px solid #f1f5f9";
+    div.style.display = "flex";
+    div.style.justifyContent = "space-between";
+    div.style.alignItems = "center";
+    
+    const isReceived = t.type === 'received';
+    const color = isReceived ? 'var(--success)' : 'var(--danger)';
+    const sign = isReceived ? '+' : '-';
+    const actionText = isReceived ? 'from' : 'to';
+    
+    const undoPrefix = t.isUndo ? '🔄 UNDONE: ' : '';
+    
+div.innerHTML = `
+  <span style="font-size: 13px;">
+    <span style="font-weight: 700; color: ${color};">${undoPrefix}${isReceived ? 'Received' : 'Paid'} ${actionText} ${t.fromTo || 'Unknown'}</span>
+    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Balance: ₹${t.balance}</div>
+  </span>
+  <span style="font-size: 16px; font-weight: 800; color: ${color};">${sign}₹${t.amount}</span>
+`;
+    transList.appendChild(div);
+  });
+}
+        
+        showScreen("myTransactionsUI");
+      }
+
+      function closeMyTransactionsModal() {
+        document.getElementById("myTransactionsUI").classList.add("hidden");
+        document.getElementById("gameScreen").classList.remove("hidden");
+      }
+
+      socket.on("incomingRequest", (data) => {
+        playRequestSound(); // Play sound when request arrives
+        
+        const modal = document.getElementById("modal");
+        modal.classList.remove("hidden");
+        document.getElementById(
+          "modalTitle"
+        ).textContent = `Request from ${data.requesterName}`;
+        document.getElementById(
+          "modalText"
+        ).textContent = `Requests ₹${data.amount}`;
+
+        const acts = document.getElementById("modalActions");
+        acts.innerHTML = "";
+
+        const btnPay = document.createElement("button");
+        btnPay.className = "btn btn-success";
+        btnPay.textContent = "Pay";
+        btnPay.onclick = () => {
+          socket.emit("respondRequest", {
+            gameId: myGameId,
+            reqId: data.reqId,
+            decision: "accept",
+          });
+          modal.classList.add("hidden");
+        };
+
+        const btnReject = document.createElement("button");
+        btnReject.className = "btn btn-danger";
+        btnReject.textContent = "Reject";
+        btnReject.onclick = () => {
+          socket.emit("respondRequest", {
+            gameId: myGameId,
+            reqId: data.reqId,
+            decision: "reject",
+          });
+          modal.classList.add("hidden");
+        };
+
+        acts.appendChild(btnPay);
+        acts.appendChild(btnReject);
+
+        // Auto-close after 30 seconds
+        setTimeout(() => {
+          if (!modal.classList.contains("hidden")) {
+            modal.classList.add("hidden");
+          }
+        }, 30000);
+      });
+
+      // --- UNDO TRANSACTION ---
+
+      function requestUndo() {
+        const btn = document.getElementById("btnUndoTransaction");
+
+        if (btn.disabled) return;
+
+        if (confirm("Confirm: Undo the last transaction?")) {
+          socket.emit("undoTransaction", { gameId: myGameId });
+          btn.disabled = true;
+          btn.textContent = "Processing...";
+        }
+      }
+
+      socket.on("enableUndo", () => {
+        const btn = document.getElementById("btnUndoTransaction");
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Undo Last Transaction";
+
+          // Clear existing timeout
+          if (undoTimeout) clearTimeout(undoTimeout);
+
+          // Disable after 30 seconds
+          undoTimeout = setTimeout(() => {
+            btn.disabled = true;
+            btn.textContent = "Undo Last Transaction";
+          }, 30000);
+        }
+      });
+
+      socket.on("undoComplete", () => {
+        const btn = document.getElementById("btnUndoTransaction");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Undo Last Transaction";
+        }
+      });
+
+      socket.on("bankBalanceUpdate", (balance) => {
+        document.getElementById("bankBalanceDisplay").textContent =
+          "₹" + balance;
+      });
+
+      // --- END GAME ---
+      function endGame() {
+        if (confirm("Are you sure you want to end the game?")) {
+          socket.emit("endGame", { gameId: myGameId });
+        }
+      }
+
+      // --- FAQ TOGGLE FUNCTIONS ---
+      function toggleFAQ() {
+        const content = document.getElementById('faqContent');
+        const arrow = document.getElementById('faqArrow');
+        
+        if (content.classList.contains('hidden')) {
+          content.classList.remove('hidden');
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          content.classList.add('hidden');
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      function toggleSection(sectionId) {
+        const section = document.getElementById('section-' + sectionId);
+        const arrow = document.getElementById('arrow-' + sectionId);
+        
+        if (section.classList.contains('hidden')) {
+          section.classList.remove('hidden');
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          section.classList.add('hidden');
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      socket.on("gameOver", (players) => {
+        const list = document.getElementById("finalList");
+        list.innerHTML = "";
+
+        players.forEach((p) => {
+          const li = document.createElement("li");
+          li.style.padding = "12px";
+          li.style.borderBottom = "1px solid #f1f5f9";
+          li.style.display = "flex";
+          li.style.justifyContent = "space-between";
+          li.innerHTML = `<span>${p.name}</span><strong>₹${p.balance}</strong>`;
+          list.appendChild(li);
+        });
+
+        deleteGameFromHistory(myGameId, myName);
+        showScreen("endScreen");
+      });
+    </script>
+  </body>
+</html>
