@@ -1137,20 +1137,56 @@
     const toggleBtn = document.getElementById('themeToggle');
     const html = document.documentElement;
 
-    // Check saved theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      html.setAttribute('data-theme', savedTheme);
-      toggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    function getSystemTheme() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
 
-    toggleBtn.onclick = () => {
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    function updateThemeDisplay(mode) {
+      const systemTheme = getSystemTheme();
+      let effectiveTheme = mode;
 
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      toggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      if (mode === 'system') {
+        effectiveTheme = systemTheme;
+        toggleBtn.textContent = '🌓'; // System icon
+        toggleBtn.title = `System Default (${effectiveTheme})`;
+      } else if (mode === 'light') {
+        toggleBtn.textContent = '☀️';
+        toggleBtn.title = 'Light Mode';
+      } else {
+        toggleBtn.textContent = '🌙';
+        toggleBtn.title = 'Dark Mode';
+      }
+
+      if (effectiveTheme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+      } else {
+        html.removeAttribute('data-theme');
+      }
+    }
+
+    // Listener for system changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      const currentMode = localStorage.getItem('theme') || 'system';
+      if (currentMode === 'system') {
+        updateThemeDisplay('system');
+      }
+    });
+
+    // Initialize (Default to System if no save)
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    updateThemeDisplay(savedTheme);
+
+    toggleBtn.onclick = () => {
+      const currentMode = localStorage.getItem('theme') || 'system';
+      let newMode;
+
+      // Cycle: System -> Light -> Dark -> System
+      if (currentMode === 'system') newMode = 'light';
+      else if (currentMode === 'light') newMode = 'dark';
+      else newMode = 'system';
+
+      localStorage.setItem('theme', newMode);
+      updateThemeDisplay(newMode);
     };
 
     const socket = io(window.location.origin);
