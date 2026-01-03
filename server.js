@@ -16,6 +16,11 @@ app.get("/test", (req, res) => {
   res.send("king!");
 });
 
+// Route to handle game URLs - serves the same page, client will read the game ID from URL
+app.get("/game/:gameId", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // --- GAME STATE ---
 const games = {};
 
@@ -313,73 +318,73 @@ io.on("connection", (socket) => {
   });
 
   // --- REQUEST GAME STATE (for reconnection) ---
-socket.on("requestGameState", ({ gameId, name }) => {
-  console.log("📥 Game state request from:", name, "for game:", gameId);
-  const game = games[gameId];
-  
-  if (!game) {
-    console.log("❌ Game not found");
-    return socket.emit("error", "Game not found");
-  }
-  
-  // Check if this is the host
-  const isHostUser = game.hostName.toLowerCase() === name.toLowerCase();
-  
-  if (isHostUser) {
-    // Update host socket ID
-    game.hostSocketId = socket.id;
-    socket.join(gameId);
-    
-    socket.emit("gameJoined", {
-      gameId: gameId,
-      isHost: true,
-      name: name,
-      status: game.status,
-      bankBalance: game.bankBalance,
-    });
-    
-    io.to(gameId).emit("updatePlayerList", game.players);
-    io.to(gameId).emit("updateLogs", game.logs);
-    socket.emit("bankStatsUpdate", game.bankStats);
-    
-    if (game.lastTransaction) {
-      socket.emit("enableUndo");
+  socket.on("requestGameState", ({ gameId, name }) => {
+    console.log("📥 Game state request from:", name, "for game:", gameId);
+    const game = games[gameId];
+
+    if (!game) {
+      console.log("❌ Game not found");
+      return socket.emit("error", "Game not found");
     }
-  } else {
-    // Regular player
-    const player = game.players.find(
-      (p) => p.name.toLowerCase() === name.toLowerCase()
-    );
-    
-    if (!player) {
-      console.log("❌ Player not found in game");
-      return socket.emit("error", "You are not in this game");
+
+    // Check if this is the host
+    const isHostUser = game.hostName.toLowerCase() === name.toLowerCase();
+
+    if (isHostUser) {
+      // Update host socket ID
+      game.hostSocketId = socket.id;
+      socket.join(gameId);
+
+      socket.emit("gameJoined", {
+        gameId: gameId,
+        isHost: true,
+        name: name,
+        status: game.status,
+        bankBalance: game.bankBalance,
+      });
+
+      io.to(gameId).emit("updatePlayerList", game.players);
+      io.to(gameId).emit("updateLogs", game.logs);
+      socket.emit("bankStatsUpdate", game.bankStats);
+
+      if (game.lastTransaction) {
+        socket.emit("enableUndo");
+      }
+    } else {
+      // Regular player
+      const player = game.players.find(
+        (p) => p.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (!player) {
+        console.log("❌ Player not found in game");
+        return socket.emit("error", "You are not in this game");
+      }
+
+      // Update player socket ID
+      player.socketId = socket.id;
+      player.active = true;
+      socket.join(gameId);
+
+      socket.emit("gameJoined", {
+        gameId: gameId,
+        isHost: false,
+        name: player.name,
+        status: game.status,
+        balance: player.balance,
+      });
+
+      if (game.status === "active") {
+        socket.emit("gameStateActive", { balance: player.balance });
+      }
+
+      io.to(gameId).emit("updatePlayerList", game.players);
+      io.to(gameId).emit("updateLogs", game.logs);
+      socket.emit("bankStatsUpdate", game.bankStats);
     }
-    
-    // Update player socket ID
-    player.socketId = socket.id;
-    player.active = true;
-    socket.join(gameId);
-    
-    socket.emit("gameJoined", {
-      gameId: gameId,
-      isHost: false,
-      name: player.name,
-      status: game.status,
-      balance: player.balance,
-    });
-    
-    if (game.status === "active") {
-      socket.emit("gameStateActive", { balance: player.balance });
-    }
-    
-    io.to(gameId).emit("updatePlayerList", game.players);
-    io.to(gameId).emit("updateLogs", game.logs);
-    socket.emit("bankStatsUpdate", game.bankStats);
-  }
-  
-  console.log("✅ Game state sent successfully");
-});
+
+    console.log("✅ Game state sent successfully");
+  });
 
   socket.on("toggleReady", ({ gameId }) => {
     const game = games[gameId];
@@ -494,9 +499,8 @@ socket.on("requestGameState", ({ gameId, name }) => {
 
       if (isBank || sender.balance >= 0) {
         game.logs.unshift({
-          msg: `${
-            isBank ? "🏦 BANK" : sender.name
-          } paid EVERYONE ₹${amountNum}`,
+          msg: `${isBank ? "🏦 BANK" : sender.name
+            } paid EVERYONE ₹${amountNum}`,
           time: Date.now(),
         });
 
@@ -586,9 +590,8 @@ socket.on("requestGameState", ({ gameId, name }) => {
       target.balance += amountNum;
 
       game.logs.unshift({
-        msg: `${isBank ? "🏦 BANK" : sender.name} paid ${
-          target.name
-        } ₹${amountNum}`,
+        msg: `${isBank ? "🏦 BANK" : sender.name} paid ${target.name
+          } ₹${amountNum}`,
         time: Date.now(),
       });
 
@@ -609,14 +612,14 @@ socket.on("requestGameState", ({ gameId, name }) => {
         game.bankStats.paidTo[target.name] += amountNum;
         game.bankStats.totalPaid += amountNum;
         io.to(gameId).emit("bankStatsUpdate", game.bankStats);
-      } 
+      }
     }
 
     game.players.forEach((p) => {
-      io.to(p.socketId).emit("balanceUpdate", { 
-        balance: p.balance, 
+      io.to(p.socketId).emit("balanceUpdate", {
+        balance: p.balance,
         context: 'update',
-        lastTransaction: game.lastTransaction 
+        lastTransaction: game.lastTransaction
       });
     });
     io.to(gameId).emit("updateLogs", game.logs);
@@ -814,10 +817,10 @@ socket.on("requestGameState", ({ gameId, name }) => {
 
       delete game.requests[reqId];
       game.players.forEach((p) => {
-        io.to(p.socketId).emit("balanceUpdate", { 
-          balance: p.balance, 
+        io.to(p.socketId).emit("balanceUpdate", {
+          balance: p.balance,
           context: 'update',
-          lastTransaction: game.lastTransaction 
+          lastTransaction: game.lastTransaction
         });
       });
       io.to(gameId).emit("updateLogs", game.logs);
@@ -892,10 +895,10 @@ socket.on("requestGameState", ({ gameId, name }) => {
     }
 
     game.players.forEach((p) => {
-      io.to(p.socketId).emit("balanceUpdate", { 
-        balance: p.balance, 
+      io.to(p.socketId).emit("balanceUpdate", {
+        balance: p.balance,
         context: 'update',
-        lastTransaction: game.lastTransaction 
+        lastTransaction: game.lastTransaction
       });
     });
     io.to(gameId).emit("updateLogs", game.logs);
@@ -903,161 +906,161 @@ socket.on("requestGameState", ({ gameId, name }) => {
 
   // --- UNDO TRANSACTION ---
   socket.on("undoTransaction", ({ gameId }) => {
-  const game = games[gameId];
-  if (!game) return;
+    const game = games[gameId];
+    if (!game) return;
 
-  if (socket.id !== game.hostSocketId) {
-    return socket.emit("error", "Only host can undo transactions");
-  }
+    if (socket.id !== game.hostSocketId) {
+      return socket.emit("error", "Only host can undo transactions");
+    }
 
-  if (!game.lastTransaction) {
-    return socket.emit("error", "No transaction to undo");
-  }
+    if (!game.lastTransaction) {
+      return socket.emit("error", "No transaction to undo");
+    }
 
-  const trans = game.lastTransaction;
-  const now = Date.now();
-  
-  // Create undo transaction object for tracking
-  let undoTransaction = null;
+    const trans = game.lastTransaction;
+    const now = Date.now();
 
-  // Undo based on transaction type
-  if (trans.type === "EVERYONE") {
-    trans.recipients.forEach((recipientName) => {
-      const recipient = game.players.find((p) => p.name === recipientName);
-      if (recipient) {
-        recipient.balance -= trans.amount;
-        if (trans.from === "BANK") {
-          game.bankBalance += trans.amount;
-          
-          // Update bank stats - reverse the payment
-          if (game.bankStats.paidTo[recipientName]) {
-            game.bankStats.paidTo[recipientName] -= trans.amount;
-            if (game.bankStats.paidTo[recipientName] <= 0) {
-              delete game.bankStats.paidTo[recipientName];
+    // Create undo transaction object for tracking
+    let undoTransaction = null;
+
+    // Undo based on transaction type
+    if (trans.type === "EVERYONE") {
+      trans.recipients.forEach((recipientName) => {
+        const recipient = game.players.find((p) => p.name === recipientName);
+        if (recipient) {
+          recipient.balance -= trans.amount;
+          if (trans.from === "BANK") {
+            game.bankBalance += trans.amount;
+
+            // Update bank stats - reverse the payment
+            if (game.bankStats.paidTo[recipientName]) {
+              game.bankStats.paidTo[recipientName] -= trans.amount;
+              if (game.bankStats.paidTo[recipientName] <= 0) {
+                delete game.bankStats.paidTo[recipientName];
+              }
             }
+            game.bankStats.totalPaid -= trans.amount;
           }
-          game.bankStats.totalPaid -= trans.amount;
+        }
+      });
+
+      if (trans.from !== "BANK") {
+        const sender = game.players.find((p) => p.name === trans.from);
+        if (sender) {
+          sender.balance += trans.amount * trans.recipients.length;
         }
       }
-    });
 
-    if (trans.from !== "BANK") {
-      const sender = game.players.find((p) => p.name === trans.from);
-      if (sender) {
-        sender.balance += trans.amount * trans.recipients.length;
-      }
-    }
+      game.logs.unshift({
+        msg: `🔄 UNDONE: ${trans.from} payment to EVERYONE of ₹${trans.amount}`,
+        time: Date.now(),
+      });
 
-    game.logs.unshift({
-      msg: `🔄 UNDONE: ${trans.from} payment to EVERYONE of ₹${trans.amount}`,
-      time: Date.now(),
-    });
-    
-    // Create undo transaction for each recipient
-    undoTransaction = {
-      type: "UNDO_EVERYONE",
-      from: trans.from,
-      recipients: trans.recipients,
-      amount: trans.amount,
-      timestamp: Date.now(),
-    };
-    
-  } else if (trans.type === "TO_BANK") {
-    const sender = game.players.find((p) => p.name === trans.from);
-    if (sender) {
-      sender.balance += trans.amount;
-      game.bankBalance -= trans.amount;
-      
-      // Update bank stats - reverse the receipt
-      if (game.bankStats.receivedFrom[sender.name]) {
-        game.bankStats.receivedFrom[sender.name] -= trans.amount;
-        if (game.bankStats.receivedFrom[sender.name] <= 0) {
-          delete game.bankStats.receivedFrom[sender.name];
-        }
-      }
-      game.bankStats.totalReceived -= trans.amount;
-    }
-
-    game.logs.unshift({
-      msg: `🔄 UNDONE: ${trans.from} payment to Bank of ₹${trans.amount}`,
-      time: Date.now(),
-    });
-    
-    undoTransaction = {
-      type: "UNDO_TO_BANK",
-      from: "BANK",
-      to: trans.from,
-      amount: trans.amount,
-      timestamp: Date.now(),
-    };
-    
-  } else if (trans.type === "INDIVIDUAL") {
-    const recipient = game.players.find((p) => p.name === trans.to);
-    if (recipient) {
-      recipient.balance -= trans.amount;
-    }
-
-    if (trans.from === "BANK") {
-      game.bankBalance += trans.amount;
-      
-      // Update bank stats - reverse the payment
-      if (game.bankStats.paidTo[trans.to]) {
-        game.bankStats.paidTo[trans.to] -= trans.amount;
-        if (game.bankStats.paidTo[trans.to] <= 0) {
-          delete game.bankStats.paidTo[trans.to];
-        }
-      }
-      game.bankStats.totalPaid -= trans.amount;
-      
+      // Create undo transaction for each recipient
       undoTransaction = {
-        type: "UNDO_FROM_BANK",
-        from: trans.to,
-        to: "BANK",
+        type: "UNDO_EVERYONE",
+        from: trans.from,
+        recipients: trans.recipients,
         amount: trans.amount,
         timestamp: Date.now(),
       };
-      
-    } else {
+
+    } else if (trans.type === "TO_BANK") {
       const sender = game.players.find((p) => p.name === trans.from);
       if (sender) {
         sender.balance += trans.amount;
+        game.bankBalance -= trans.amount;
+
+        // Update bank stats - reverse the receipt
+        if (game.bankStats.receivedFrom[sender.name]) {
+          game.bankStats.receivedFrom[sender.name] -= trans.amount;
+          if (game.bankStats.receivedFrom[sender.name] <= 0) {
+            delete game.bankStats.receivedFrom[sender.name];
+          }
+        }
+        game.bankStats.totalReceived -= trans.amount;
       }
-      
+
+      game.logs.unshift({
+        msg: `🔄 UNDONE: ${trans.from} payment to Bank of ₹${trans.amount}`,
+        time: Date.now(),
+      });
+
       undoTransaction = {
-        type: "UNDO_INDIVIDUAL",
-        from: trans.to,
+        type: "UNDO_TO_BANK",
+        from: "BANK",
         to: trans.from,
         amount: trans.amount,
         timestamp: Date.now(),
       };
+
+    } else if (trans.type === "INDIVIDUAL") {
+      const recipient = game.players.find((p) => p.name === trans.to);
+      if (recipient) {
+        recipient.balance -= trans.amount;
+      }
+
+      if (trans.from === "BANK") {
+        game.bankBalance += trans.amount;
+
+        // Update bank stats - reverse the payment
+        if (game.bankStats.paidTo[trans.to]) {
+          game.bankStats.paidTo[trans.to] -= trans.amount;
+          if (game.bankStats.paidTo[trans.to] <= 0) {
+            delete game.bankStats.paidTo[trans.to];
+          }
+        }
+        game.bankStats.totalPaid -= trans.amount;
+
+        undoTransaction = {
+          type: "UNDO_FROM_BANK",
+          from: trans.to,
+          to: "BANK",
+          amount: trans.amount,
+          timestamp: Date.now(),
+        };
+
+      } else {
+        const sender = game.players.find((p) => p.name === trans.from);
+        if (sender) {
+          sender.balance += trans.amount;
+        }
+
+        undoTransaction = {
+          type: "UNDO_INDIVIDUAL",
+          from: trans.to,
+          to: trans.from,
+          amount: trans.amount,
+          timestamp: Date.now(),
+        };
+      }
+
+      game.logs.unshift({
+        msg: `🔄 UNDONE: ${trans.from} payment to ${trans.to} of ₹${trans.amount}`,
+        time: Date.now(),
+      });
     }
 
-    game.logs.unshift({
-      msg: `🔄 UNDONE: ${trans.from} payment to ${trans.to} of ₹${trans.amount}`,
-      time: Date.now(),
-    });
-  }
+    // Clear last transaction
+    game.lastTransaction = null;
 
-  // Clear last transaction
-  game.lastTransaction = null;
-
-  // Update all players WITH undo transaction details
-  game.players.forEach((p) => {
-    io.to(p.socketId).emit("balanceUpdate", { 
-      balance: p.balance, 
-      context: 'undo',
-      lastTransaction: undoTransaction 
+    // Update all players WITH undo transaction details
+    game.players.forEach((p) => {
+      io.to(p.socketId).emit("balanceUpdate", {
+        balance: p.balance,
+        context: 'undo',
+        lastTransaction: undoTransaction
+      });
     });
+
+    // Update bank balance and stats
+    io.to(game.hostSocketId).emit("bankBalanceUpdate", game.bankBalance);
+    io.to(gameId).emit("bankStatsUpdate", game.bankStats);
+    io.to(gameId).emit("updateLogs", game.logs);
+    io.to(game.hostSocketId).emit("undoComplete");
+
+    console.log("✅ Transaction undone successfully");
   });
-  
-  // Update bank balance and stats
-  io.to(game.hostSocketId).emit("bankBalanceUpdate", game.bankBalance);
-  io.to(gameId).emit("bankStatsUpdate", game.bankStats);
-  io.to(gameId).emit("updateLogs", game.logs);
-  io.to(game.hostSocketId).emit("undoComplete");
-
-  console.log("✅ Transaction undone successfully");
-});
 
   socket.on("endGame", ({ gameId }) => {
     const game = games[gameId];
